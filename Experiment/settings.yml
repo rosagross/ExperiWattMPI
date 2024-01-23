@@ -1,0 +1,15 @@
+
+window:
+    size: [500, 500]
+    pos: [0, 0]
+    color: [186, 186, 186]
+    colorSpace: 'rgb255'
+    fullscr: True
+    winType: pyglet
+    waitBlanking: True
+
+operating system: windows
+
+Task settings: 
+    Experiment duration: 30 # 5 minutes
+    Stimulus duration: 3 # seconds

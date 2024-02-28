@@ -9,6 +9,7 @@
 import numpy as np
 import os
 import re
+import csv
 import random
 import yaml
 import eego_sdk
@@ -18,7 +19,7 @@ import time
 import matplotlib.pyplot as plt
 from datetime import datetime
 from psychopy import core
-from psychopy.visual import Window, TextStim, Circle, Rect
+from psychopy.visual import Window, TextStim, Circle, Polygon, ShapeStim
 from psychopy.event import waitKeys, Mouse
 from psychopy.hardware import keyboard
 import random
@@ -53,24 +54,24 @@ class ExperiSession():
         self.stim_duration = self.settings['Task settings']['Stimulus duration']
         self.task_duration = self.stim_duration * 5
         print("Stimulation duration", self.stim_duration)
-        self.win = Window(fullscr=True)  #(**self.settings['window'])
+        self.win = Window(fullscr=True, checkTiming=False)  #(**self.settings['window'])
 
-        # set if this is a "power" session or a "sleepy" session
+        # set if this is a "active" session or a "passive" session
         if session_type == 1:
-            self.session_mode = "power"
+            self.session_mode = "active"
             self.blue_list = []
             self.red_list = []
             self.yellow_list = []
             # create the stimuli 
-            print("POWER SESSION")
+            print("active SESSION")
             self.color_str, self.number_list, self.color_list = self.create_math_stim()
             
             # store the sums in a dictionary
             self.sums = {colour : 0 for colour in self.color_str}
             print(self.sums)
         else:
-            self.session_mode = "sleepy"
-            print("SLEEPY SESSION")
+            self.session_mode = "passive"
+            print("passive SESSION")
 
         # initialize the keyboard for the button presses
         self.kb = keyboard.Keyboard()
@@ -119,7 +120,15 @@ class ExperiSession():
         circle_stim_list = []
 
         # make a list with all numbers that will occur
-        number_list = [np.random.randint(1,10) for _ in range(nr_circles)]
+
+        number_list = [np.random.randint(1,10)]
+        
+        for _ in range(nr_circles):
+            next_num = np.random.randint(1,10)
+            while next_num == number_list[-1]:
+                next_num = np.random.randint(1,10)
+            number_list.append(next_num)
+
         number_list[-1] = 0
         number_stim_list = []
 
@@ -127,7 +136,7 @@ class ExperiSession():
         
         # coloured circle with a number and safe it to the corresponding color list
         for id_, number in zip(color_list, number_list):
-            print('hi', color_str[id_], number)
+            #print('hi', color_str[id_], number)
             circle_stim_list.append(Circle(self.win, fillColor=color_str[id_]))
             number_stim_list.append(TextStim(self.win, height=1, text=number))
 
@@ -154,7 +163,7 @@ class ExperiSession():
         raw.save(filename, overwrite=True)
 
     def save_session(self, amplifier):
-        # save if its sleepy or power session
+        # save if its passive or active session
 
         array_data = np.loadtxt(f'{self.output_dir}\sub-{self.subject_ID}_ses-{self.session_mode}.txt')
         print('array', array_data.shape)
@@ -188,22 +197,22 @@ class ExperiSession():
 
     def run(self):
 
-        factory = eego_sdk.factory()
-        v = factory.getVersion()
-        print('version: {}.{}.{}.{}'.format(v.major, v.minor, v.micro, v.build))
+        #factory = eego_sdk.factory()
+        #v = factory.getVersion()
+        #print('version: {}.{}.{}.{}'.format(v.major, v.minor, v.micro, v.build))
 
-        print('delaying to allow slow devices to attach...')
-        time.sleep(1)
+        #print('delaying to allow slow devices to attach...')
+        #time.sleep(1)
 
         # STREAM
-        amplifiers = factory.getAmplifiers()
-        amplifier = amplifiers[0]
-        channels = amplifier.getChannelList()
-        rates = amplifier.getSamplingRatesAvailable()
-        ref_ranges = amplifier.getReferenceRangesAvailable()
-        bip_ranges = amplifier.getBipolarRangesAvailable()
-        sfreq = rates[0]
-        stream = amplifier.OpenEegStream(sfreq, ref_ranges[0], bip_ranges[0])
+        #amplifiers = factory.getAmplifiers()
+        #amplifier = amplifiers[0]
+        #channels = amplifier.getChannelList()
+        #rates = amplifier.getSamplingRatesAvailable()
+        #ref_ranges = amplifier.getReferenceRangesAvailable()
+        #bip_ranges = amplifier.getBipolarRangesAvailable()
+        #sfreq = rates[0]
+        #stream = amplifier.OpenEegStream(sfreq, ref_ranges[0], bip_ranges[0])
         
         #self.test_impedance(amplifier)
         # setup for the plotting
@@ -218,10 +227,12 @@ class ExperiSession():
         # xdata = []
 
         # show window and wait for "OKAY" from experimenter
-        self.display_text("SPACE um fortzufahren", "space")
+        self.display_text("Warte bis der Experimenter bereit ist", "space")
 
         # READOUT 
-        with open(f'{self.output_dir}\sub-{self.subject_ID}_ses-{self.session_mode}.txt', 'w') as eeg_file:
+        with open(f'{self.output_dir}\sub-{self.subject_ID}_ses-Solution.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Lösung', 'Farbe'])
 
             t0 = time.time()
             t1 = t0 + self.exp_duration
@@ -230,7 +241,7 @@ class ExperiSession():
             t_trial = t0
             trial_count = 0
 
-            fix_dot = Circle(self.win, radius=0.05, fillColor='black')
+            fix_dot = ShapeStim(self.win, units='pix', fillColor='black', vertices='cross', lineWidth=1, size=(50,50))
             fix_dot.draw()
             self.win.flip()
 
@@ -242,9 +253,21 @@ class ExperiSession():
                     t_trial = time.time()
 
 
-                    if self.session_mode == "power":
+                    if self.session_mode == "active":
                         if (trial_count % 5 == 0) and (trial_count > 0):
-                            self.display_text(f"Korrekte Summe:\n Rot:{self.sums['red']}, Grün:{self.sums['green']}, Blau:{self.sums['blue']}", "space")
+                            colour_task = random.randint(0,2)
+                            if colour_task == 0:
+                                self.display_text(f"Welche Summe hat die Farbe \n Rot", duration=4)
+                                writer.writerow([self.sums['red'], 'ROT'])
+                            
+                            elif colour_task == 1:    
+                                self.display_text(f"Welche Summe hat die Farbe \n Grün", duration=4)
+                                writer.writerow([self.sums['green'], 'GRÜN'])
+
+                            elif colour_task == 2:    
+                                self.display_text(f"Welche Summe hat die Farbe \n Blau", duration=4)
+                                writer.writerow([self.sums['blue'], 'BLAU'])
+
                             # reset trial timer
                             t_trial = time.time()
                             # reset sum
@@ -266,14 +289,14 @@ class ExperiSession():
                 if delay > 0:
                     time.sleep(delay)
 
-                self.save_sample(stream, channels, eeg_file)
+                # self.save_sample(stream, channels, eeg_file)
 
-        self.save_session(amplifier)
+        # self.save_session(amplifier)
 
         self.display_text("WELL DONE!", "space")
-        if self.session_mode == "power":
+        if self.session_mode == "active":
             print(self.sums)
-            self.display_text(f"Korrekte Summe:\n Rot:{self.sums['red']}, Grün:{self.sums['green']}, Blau:{self.sums['blue']}", "space")
+            #self.display_text(f"Korrekte Summe:\n Rot:{self.sums['red']}, Grün:{self.sums['green']}, Blau:{self.sums['blue']}", "space")
 
             
 

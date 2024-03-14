@@ -197,35 +197,6 @@ class ExperiSession():
 
     def run(self):
 
-        #factory = eego_sdk.factory()
-        #v = factory.getVersion()
-        #print('version: {}.{}.{}.{}'.format(v.major, v.minor, v.micro, v.build))
-
-        #print('delaying to allow slow devices to attach...')
-        #time.sleep(1)
-
-        # STREAM
-        #amplifiers = factory.getAmplifiers()
-        #amplifier = amplifiers[0]
-        #channels = amplifier.getChannelList()
-        #rates = amplifier.getSamplingRatesAvailable()
-        #ref_ranges = amplifier.getReferenceRangesAvailable()
-        #bip_ranges = amplifier.getBipolarRangesAvailable()
-        #sfreq = rates[0]
-        #stream = amplifier.OpenEegStream(sfreq, ref_ranges[0], bip_ranges[0])
-        
-        #self.test_impedance(amplifier)
-        # setup for the plotting
-        # fig, ax = plt.subplots()
-        # line, = ax.plot([], [])
-        # n_channels = 24
-        # Number of channels you want to plot
-        #n_channels_to_plot = 5
-
-        # Initialize ydata as a list of empty lists, one for each channel
-        # ydata = [[] for _ in range(n_channels_to_plot)]
-        # xdata = []
-
         # show window and wait for "OKAY" from experimenter
         self.display_text("Warte bis der Experimenter bereit ist", "space")
 
@@ -289,15 +260,9 @@ class ExperiSession():
                 if delay > 0:
                     time.sleep(delay)
 
-                # self.save_sample(stream, channels, eeg_file)
-
-        # self.save_session(amplifier)
-
-        self.display_text("WELL DONE!", "space")
+        self.display_text("Fertig, gut gemacht!", "space")
         if self.session_mode == "active":
             print(self.sums)
-            #self.display_text(f"Korrekte Summe:\n Rot:{self.sums['red']}, Grün:{self.sums['green']}, Blau:{self.sums['blue']}", "space")
-
             
 
                 
